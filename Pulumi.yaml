@@ -1,0 +1,11 @@
+name: visual-utils-infra
+description: Pulumi program to create infra for visual-utils
+runtime:
+  name: python
+  options:
+    toolchain: pip
+    virtualenv: venv
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: aws-python
