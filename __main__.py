@@ -10,4 +10,4 @@ rgb_splitting_user_upload_bucket = s3.BucketV2(
     ],
 )
 
-pulumi.export("bucket_name", rgb_splitting_user_upload_bucket.id)
+pulumi.export("rgb_splitting_user_upload_bucket", rgb_splitting_user_upload_bucket.id)
