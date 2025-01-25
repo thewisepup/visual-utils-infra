@@ -1,5 +1,3 @@
-"""An AWS Python Pulumi program"""
-
 import pulumi
 from pulumi_aws import s3
 
@@ -12,5 +10,4 @@ rgb_splitting_user_upload_bucket = s3.BucketV2(
     ],
 )
 
-# Export the name of the bucket
 pulumi.export("bucket_name", rgb_splitting_user_upload_bucket.id)
