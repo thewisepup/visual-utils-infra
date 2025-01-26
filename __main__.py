@@ -5,8 +5,12 @@ stack = pulumi.get_stack()
 
 rgb_splitting_user_upload_bucket = s3.BucketV2(
     f"rgb-splitting-user-upload-{stack}",
-    lifecycle_rules=[
-        {"enabled": True, "id": "delete-after-1-day", "expirations": [{"days": 1}]}
+)
+s3.BucketLifecycleConfigurationV2(
+    f"rgb-splitting-user-upload-lifecycle-{stack}",
+    bucket=rgb_splitting_user_upload_bucket.id,
+    rules=[
+        {"status": "Enabled", "id": "delete-after-1-day", "expiration": {"days": 1}}
     ],
 )
 
