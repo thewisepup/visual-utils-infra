@@ -15,7 +15,11 @@ s3.BucketLifecycleConfigurationV2(
 )
 
 allowed_origins = (
-    ["http://localhost:3000"] if stack == "dev" else ["https://*.vercel.app"]
+    ["http://localhost:3000"]
+    if stack == "dev"
+    else [
+        "https://*.vercel.app",
+    ]
 )
 
 s3.BucketCorsConfigurationV2(
