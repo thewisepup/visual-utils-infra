@@ -14,6 +14,23 @@ s3.BucketLifecycleConfigurationV2(
     ],
 )
 
+allowed_origins = (
+    ["http://localhost:3000"] if stack == "dev" else ["https://*.vercel.app"]
+)
+
+s3.BucketCorsConfigurationV2(
+    f"rgb-splitting-user-upload-cors-{stack}",
+    bucket=rgb_splitting_user_upload_bucket.id,
+    cors_rules=[
+        {
+            "allowed_headers": ["*"],
+            "allowed_methods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+            "allowed_origins": allowed_origins,
+            "expose_headers": ["ETag"],
+        }
+    ],
+)
+
 nextjs_app_iam_user = iam.User(
     f"nextjs-app-user-{stack}",
 )
