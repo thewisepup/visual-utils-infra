@@ -1,8 +1,9 @@
 import pulumi
-from pulumi_aws import s3, iam
+from pulumi_aws import s3, iam, lambda_
 
 stack = pulumi.get_stack()
 
+# Create S3 bucket for user uploads
 rgb_splitting_user_upload_bucket = s3.BucketV2(
     f"rgb-splitting-user-upload-{stack}",
 )
@@ -35,6 +36,64 @@ s3.BucketCorsConfigurationV2(
     ],
 )
 
+# Create RGB Splitting Lambda
+lambda_assume_role_policy = iam.get_policy_document(
+    statements=[
+        {
+            "effect": "Allow",
+            "principals": [
+                {
+                    "type": "Service",
+                    "identifiers": ["lambda.amazonaws.com"],
+                }
+            ],
+            "actions": ["sts:AssumeRole"],
+        }
+    ]
+)
+
+rgb_splitting_lambda_role = iam.Role(
+    "rgb_splitting_lambda_role",
+    name="rgb_splitting_lambda_role",
+    assume_role_policy=lambda_assume_role_policy.json,
+)
+
+iam.RolePolicyAttachment(
+    "rgb_splitting_lambda_logging_policy",
+    role=rgb_splitting_lambda_role.name,
+    policy_arn="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+)
+
+rgb_splitting_lambda = lambda_.Function(
+    "rgb_splitting_lambda",
+    code=pulumi.FileArchive("rgb_splitting_lambda.zip"),
+    name="rgb_splitting_lambda",
+    role=rgb_splitting_lambda_role.arn,
+    handler="rgb_splitting_lambda.lambda_handler",
+    runtime="python3.11",
+)
+lambda_.Permission(
+    "allow_rgb_splitting_lambda_execution_from_s3_bucket",
+    statement_id="AllowExecutionFromS3Bucket",
+    action="lambda:InvokeFunction",
+    function=rgb_splitting_lambda.arn,
+    principal="s3.amazonaws.com",
+    source_arn=rgb_splitting_user_upload_bucket.arn,
+)
+
+# Create S3 bucket notification for RGB Splitting Lambda/Bucket
+s3.BucketNotification(
+    "bucket_notification",
+    bucket=rgb_splitting_user_upload_bucket.id,
+    lambda_functions=[
+        {
+            "lambda_function_arn": rgb_splitting_lambda.arn,
+            "events": ["s3:ObjectCreated:*"],
+        }
+    ],
+)
+
+# Create IAM user for Next.js app
 nextjs_app_iam_user = iam.User(
     f"nextjs-app-user-{stack}",
 )
