@@ -3,7 +3,7 @@ from pulumi_aws import s3, iam, lambda_
 
 stack = pulumi.get_stack()
 
-# Create S3 bucket for user uploads
+# Create S3 bucket for RGB Splitting user uploads
 rgb_splitting_user_upload_bucket = s3.BucketV2(
     f"rgb-splitting-user-upload-{stack}",
 )
@@ -36,6 +36,30 @@ s3.BucketCorsConfigurationV2(
     ],
 )
 
+# Create S3 bucket for processed RGB Splitting uploads
+rgb_splitting_processed_bucket = s3.BucketV2(
+    f"rgb-splitting-processed-{stack}",
+)
+s3.BucketLifecycleConfigurationV2(
+    f"rgb-splitting-processed-lifecycle-{stack}",
+    bucket=rgb_splitting_processed_bucket.id,
+    rules=[
+        {"status": "Enabled", "id": "delete-after-1-day", "expiration": {"days": 1}}
+    ],
+)
+s3.BucketCorsConfigurationV2(
+    f"rgb-splitting-processed-cors-{stack}",
+    bucket=rgb_splitting_processed_bucket.id,
+    cors_rules=[
+        {
+            "allowed_headers": ["*"],
+            "allowed_methods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+            "allowed_origins": allowed_origins,
+            "expose_headers": ["ETag"],
+        }
+    ],
+)
+
 # Create RGB Splitting Lambda
 lambda_assume_role_policy = iam.get_policy_document(
     statements=[
@@ -58,6 +82,36 @@ rgb_splitting_lambda_role = iam.Role(
     assume_role_policy=lambda_assume_role_policy.json,
 )
 
+# Add S3 permissions for rgb_splitting_lambda_role
+rgb_splitting_lambda_s3_policy = iam.Policy(
+    "rgb_splitting_lambda_s3_policy",
+    policy=pulumi.Output.all(
+        rgb_splitting_user_upload_bucket.arn, rgb_splitting_processed_bucket.arn
+    ).apply(
+        lambda args: {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": ["s3:GetObject"],
+                    "Resource": [f"{args[0]}/*"],
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": ["s3:PutObject"],
+                    "Resource": [f"{args[1]}/*"],
+                },
+            ],
+        }
+    ),
+)
+
+iam.RolePolicyAttachment(
+    "rgb_splitting_lambda_s3_policy_attachment",
+    role=rgb_splitting_lambda_role.name,
+    policy_arn=rgb_splitting_lambda_s3_policy.arn,
+)
+
 iam.RolePolicyAttachment(
     "rgb_splitting_lambda_logging_policy",
     role=rgb_splitting_lambda_role.name,
@@ -71,6 +125,9 @@ rgb_splitting_lambda = lambda_.Function(
     role=rgb_splitting_lambda_role.arn,
     handler="rgb_splitting_lambda.lambda_handler",
     runtime="python3.11",
+    environment={
+        "variables": {"DESTINATION_BUCKET": rgb_splitting_processed_bucket.bucket}
+    },
 )
 lambda_.Permission(
     "allow_rgb_splitting_lambda_execution_from_s3_bucket",
@@ -81,7 +138,6 @@ lambda_.Permission(
     source_arn=rgb_splitting_user_upload_bucket.arn,
 )
 
-# Create S3 bucket notification for RGB Splitting Lambda/Bucket
 s3.BucketNotification(
     "bucket_notification",
     bucket=rgb_splitting_user_upload_bucket.id,
