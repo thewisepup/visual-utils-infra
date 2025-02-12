@@ -123,10 +123,10 @@ iam.RolePolicyAttachment(
 )
 
 rgb_splitting_lambda = lambda_.Function(
-    "rgb_splitting_lambda",
+    f"rgb_splitting_lambda-{stack}",
     s3_bucket=lambda_deployment_bucket.bucket,
     s3_key="rgb_splitting_lambda.zip",
-    name="rgb_splitting_lambda",
+    name=f"rgb_splitting_lambda-{stack}",
     role=rgb_splitting_lambda_role.arn,
     handler="rgb_splitting_lambda.lambda_handler",
     runtime="python3.11",
