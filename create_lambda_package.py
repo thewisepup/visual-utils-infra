@@ -3,45 +3,41 @@ import subprocess
 import os
 import argparse
 
+YELLOW = "\033[33m"
+END_COLOR = "\033[0m"
+GREEN = "\033[32m"
+RED = "\033[31m"
+
+ENV_CONFIGS = {
+    "dev": {
+        "bucket": "lambda-deployment-dev-4ce10b1",
+        "profile": "visual-utils-dev",
+        "function_name": "rgb_splitting_lambda-dev",
+    },
+    "prod": {
+        "bucket": "lambda-deployment-prod-4ce27e9",
+        "profile": "visual-utils-prod",
+        "function_name": "rgb_splitting_lambda-prod",
+    },
+}
+
 
 def create_lambda_package(environment="dev"):
-    YELLOW = "\033[33m"
-    END_COLOR = "\033[0m"
-    GREEN = "\033[32m"
-    RED = "\033[31m"
-
-    env_configs = {
-        "dev": {
-            "bucket": "lambda-deployment-dev-4ce10b1",
-            "profile": "visual-utils-dev",
-        },
-        "prod": {
-            "bucket": "lambda-deployment-prod-XXXXX",  # TODO Replace with prod bucket
-            "profile": "visual-utils-prod",
-        },
-    }
-
-    if environment not in env_configs:
+    if environment not in ENV_CONFIGS:
         print(f"{RED}Invalid environment. Please choose 'dev' or 'prod'{END_COLOR}")
         return
 
-    # Set AWS_PROFILE based on environment
-    if environment == "dev":
-        os.environ["AWS_PROFILE"] = "visual-utils-dev"
-    elif environment == "prod":
-        os.environ["AWS_PROFILE"] = "visual-utils-prod"
+    CONFIG = ENV_CONFIGS[environment]
 
-    # Get environment-specific configuration
-    config = env_configs[environment]
-    bucket_name = config["bucket"]
+    os.environ["AWS_PROFILE"] = CONFIG["profile"]
 
     # Verify AWS Profile is set correctly
     aws_profile = os.environ.get("AWS_PROFILE")
-    if aws_profile != config["profile"]:
+    if aws_profile != CONFIG["profile"]:
         print(
-            f"{RED}Error: AWS_PROFILE should be set to '{config['profile']}' for {environment} environment{END_COLOR}"
+            f"{RED}Error: AWS_PROFILE should be set to '{CONFIG['profile']}' for {environment} environment{END_COLOR}"
         )
-        print(f"{YELLOW}Please run: export AWS_PROFILE={config['profile']}{END_COLOR}")
+        print(f"{YELLOW}Please run: export AWS_PROFILE={CONFIG['profile']}{END_COLOR}")
         return
     print(
         f"{YELLOW}Using {environment} environment with AWS Profile: {aws_profile}{END_COLOR}"
@@ -77,7 +73,7 @@ def create_lambda_package(environment="dev"):
             "3.11",
             "--only-binary=:all:",
             "-r",
-            "requirements.txt",  # Install all requirements
+            "requirements.txt",
         ]
     )
 
@@ -96,7 +92,7 @@ def create_lambda_package(environment="dev"):
             "s3",
             "cp",
             "rgb_splitting_lambda.zip",
-            f"s3://{bucket_name}",
+            f"s3://{CONFIG['bucket']}",
         ]
     )
 
@@ -108,9 +104,9 @@ def create_lambda_package(environment="dev"):
             "lambda",
             "update-function-code",
             "--function-name",
-            "rgb_splitting_lambda",
+            CONFIG["function_name"],
             "--s3-bucket",
-            bucket_name,
+            CONFIG["bucket"],
             "--s3-key",
             "rgb_splitting_lambda.zip",
         ]
