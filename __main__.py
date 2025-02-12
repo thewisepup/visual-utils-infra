@@ -3,6 +3,11 @@ from pulumi_aws import s3, iam, lambda_
 
 stack = pulumi.get_stack()
 
+# Create S3 bucket for deployable Lambda code
+lambda_deployment_bucket = s3.BucketV2(
+    f"lambda-deployment-{stack}",
+)
+
 # Create S3 bucket for RGB Splitting user uploads
 rgb_splitting_user_upload_bucket = s3.BucketV2(
     f"rgb-splitting-user-upload-{stack}",
@@ -93,8 +98,8 @@ rgb_splitting_lambda_s3_policy = iam.Policy(
             "Statement": [
                 {
                     "Effect": "Allow",
-                    "Action": ["s3:GetObject"],
-                    "Resource": [f"{args[0]}/*"],
+                    "Action": ["s3:GetObject", "s3:ListBucket"],
+                    "Resource": [args[0], f"{args[0]}/*"],
                 },
                 {
                     "Effect": "Allow",
@@ -105,7 +110,6 @@ rgb_splitting_lambda_s3_policy = iam.Policy(
         }
     ),
 )
-
 iam.RolePolicyAttachment(
     "rgb_splitting_lambda_s3_policy_attachment",
     role=rgb_splitting_lambda_role.name,
@@ -120,7 +124,8 @@ iam.RolePolicyAttachment(
 
 rgb_splitting_lambda = lambda_.Function(
     "rgb_splitting_lambda",
-    code=pulumi.FileArchive("rgb_splitting_lambda.zip"),
+    s3_bucket=lambda_deployment_bucket.bucket,
+    s3_key="rgb_splitting_lambda.zip",
     name="rgb_splitting_lambda",
     role=rgb_splitting_lambda_role.arn,
     handler="rgb_splitting_lambda.lambda_handler",
@@ -128,6 +133,7 @@ rgb_splitting_lambda = lambda_.Function(
     environment={
         "variables": {"DESTINATION_BUCKET": rgb_splitting_processed_bucket.bucket}
     },
+    timeout=60,
 )
 lambda_.Permission(
     "allow_rgb_splitting_lambda_execution_from_s3_bucket",
