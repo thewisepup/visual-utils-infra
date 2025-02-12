@@ -30,9 +30,6 @@ def create_lambda_package(environment="dev"):
         os.environ["AWS_PROFILE"] = "visual-utils-dev"
     elif environment == "prod":
         os.environ["AWS_PROFILE"] = "visual-utils-prod"
-    print(
-        f"{YELLOW}Using {environment} environment with AWS Profile: {aws_profile}{END_COLOR}"
-    )
 
     # Get environment-specific configuration
     config = env_configs[environment]
@@ -46,6 +43,9 @@ def create_lambda_package(environment="dev"):
         )
         print(f"{YELLOW}Please run: export AWS_PROFILE={config['profile']}{END_COLOR}")
         return
+    print(
+        f"{YELLOW}Using {environment} environment with AWS Profile: {aws_profile}{END_COLOR}"
+    )
 
     print(
         f"{YELLOW}Creating lambda package for {environment} environment...{END_COLOR}"
