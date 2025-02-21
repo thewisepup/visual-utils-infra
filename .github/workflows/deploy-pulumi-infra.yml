@@ -23,7 +23,11 @@ jobs:
 
       - name: Install Pulumi CLI
         uses: pulumi/setup-pulumi@v2
-
+      - name: Login to Pulumi
+        run: |
+          pulumi login
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
       - uses: pulumi/actions@v4
         with:
           command: up
