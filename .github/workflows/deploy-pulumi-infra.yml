@@ -24,20 +24,10 @@ jobs:
       - name: Install Pulumi CLI
         uses: pulumi/setup-pulumi@v2
 
-      - name: Pulumi Stack Select
-        run: |
-          pulumi stack select dev
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-
-      - name: Pulumi Preview
-        run: |
-          pulumi preview
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-
-      - name: Pulumi Up
-        run: |
-          pulumi up --yes
+      - uses: pulumi/actions@v4
+        with:
+          command: up
+          stack-name: dev
+          upsert: true # Create the stack if it doesn't exist
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
