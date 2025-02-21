@@ -1,9 +1,9 @@
-name: Pulumi Deploy
-run-name: ${{ github.actor }} triggered Pulumi deployment 🚀
+name: Deploy Pulumi Infra
+
 on:
   push:
-    branches:
-      - main
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   pulumi-deploy:
@@ -27,18 +27,8 @@ jobs:
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
-      - name: Deploy to Beta
-        if: github.ref == 'refs/heads/beta'
-        run: |
-          pulumi stack select beta
-          pulumi up --yes
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-
-      - name: Deploy to Production
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        run: |
-          pulumi stack select prod
+      - name: Deploy to dev
+        run: pulumi stack select dev
           pulumi up --yes
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
