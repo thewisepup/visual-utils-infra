@@ -21,7 +21,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip3 install pulumi
           pip3 install -r requirements.txt
 
       - name: Configure AWS Credentials
