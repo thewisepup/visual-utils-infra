@@ -9,26 +9,17 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    environment: production # or any environment you've configured
+    environment: dev
 
     steps:
       - uses: actions/checkout@v3
-
-      # - name: Setup Python
-      #   uses: actions/setup-python@v4
-      #   with:
-      #     python-version: "3.x"
-      # - name: Install Dependencies
-      #   run: |
-      #     python -m pip install --upgrade pip
-      #     pip install -r requirements.txt
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # or your preferred region
+          aws-region: us-east-1
 
       - name: Install Pulumi CLI
         uses: pulumi/setup-pulumi@v2
