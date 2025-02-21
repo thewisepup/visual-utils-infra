@@ -162,15 +162,22 @@ nextjs_app_iam_user = iam.User(
 
 rgb_splitting_user_upload_read_write_policy = iam.Policy(
     f"rgb_splitting_user_upload_read_write_policy-{stack}",
-    policy=rgb_splitting_user_upload_bucket.arn.apply(
-        lambda arn: {
+    policy=pulumi.Output.all(
+        rgb_splitting_user_upload_bucket.arn, rgb_splitting_processed_bucket.arn
+    ).apply(
+        lambda arns: {
             "Version": "2012-10-17",
             "Statement": [
                 {
                     "Effect": "Allow",
-                    "Action": ["s3:PutObject", "s3:GetObject"],
-                    "Resource": [f"{arn}/*"],
-                }
+                    "Action": ["s3:PutObject", "s3:GetObject", "s3:HeadObject"],
+                    "Resource": [f"{arns[0]}/*"],
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": ["s3:GetObject", "s3:HeadObject"],
+                    "Resource": [f"{arns[1]}/*"],
+                },
             ],
         }
     ),
