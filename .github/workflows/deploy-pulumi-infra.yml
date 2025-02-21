@@ -27,6 +27,8 @@ jobs:
       - name: Pulumi Stack Select
         run: |
           pulumi stack select dev
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
 
       - name: Pulumi Preview
         run: |
@@ -37,3 +39,5 @@ jobs:
       - name: Pulumi Up
         run: |
           pulumi up --yes
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
